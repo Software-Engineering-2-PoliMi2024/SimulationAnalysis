@@ -1,0 +1,28 @@
+[project]
+name = "simulationanalysis"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "figinii",email = "matteo5.figini@mail.polimi.it"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pandas (>=2.3.2,<3.0.0)",
+    "db_interact @ git+https://github.com/Software-Engineering-2-PoliMi2024/DB_interact.git",
+    "dotenv (>=0.9.9,<0.10.0)"
+]
+
+[tool.poetry]
+packages = [{include = "simulation_analysis", from = "src"},
+            {include = "simulation_loader", from = "src"}
+           ]
+
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.4.1"
+ipykernel = "^6.30.1"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
