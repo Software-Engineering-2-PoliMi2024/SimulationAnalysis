@@ -149,10 +149,10 @@ def plotTrajectoriesOfARoad(
 
     colorMap = plt.get_cmap("viridis")
     if isinstance(trajectoriesColor, list) and len(trajectoriesColor) == len(trajectories) and all(isinstance(c, (int, float)) for c in trajectoriesColor):
-        norm = plt.Normalize(vmin=min(trajectoriesColor),  # type: ignore
-                             vmax=max(trajectoriesColor))  # type: ignore
+        norm = Normalize(vmin=min(trajectoriesColor),  # type: ignore
+                         vmax=max(trajectoriesColor))  # type: ignore
     else:
-        norm = plt.Normalize(vmin=0, vmax=1)  # type: ignore
+        norm = Normalize(vmin=0, vmax=1)  # type: ignore
 
     for i, traj in enumerate(trajectories):
         plotTrajectory(
@@ -171,3 +171,54 @@ def plotTrajectoriesOfARoad(
         sm = plt.cm.ScalarMappable(cmap=colorMap, norm=norm)
         sm.set_array([])  # required for colorbar to work with ScalarMappable
         plt.colorbar(sm, ax=ax, label=trajectoriesColorName)
+
+
+def plotTimeSeries(
+        series: List[List[float | int]],
+        elapsedTimes: List[float],
+        title: str, ylabel: str,
+        legend: bool = True,
+        color: str | List[float | int | str] = 'blue',
+        colorName: str | None = None):
+    """Plots a time series given its values.
+
+    Args:
+        series (List[List[float | int]]): A list of time series.
+        elapsedTimes (List[float]): A list of elapsed times corresponding to the time series.
+        title (str): The title of the plot.
+        xlabel (str): The label for the x-axis.
+        ylabel (str): The label for the y-axis.
+        legend (bool): Whether to show the legend.
+        color (str | List[float | int | str]): The color(s) to use for the plot.
+        colorName (str | None): The name of the color bar.
+
+    """
+    fig, ax = plt.subplots(figsize=(10, 5))
+    # prepare colors for plotting and optional colorbar
+    if isinstance(color, list) and len(color) == len(series) and all(isinstance(c, (int, float)) for c in color):
+        cmap = plt.get_cmap("viridis")
+        vmin, vmax = min(color), max(color)
+        if vmin == vmax:
+            vmin -= 0.5  # type: ignore
+            vmax += 0.5  # type: ignore
+        norm = Normalize(vmin=vmin, vmax=vmax)  # type: ignore
+        plot_colors = [cmap(norm(float(c))) for c in color]
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+        sm.set_array([])
+        plt.colorbar(sm, ax=ax, label=colorName)
+    elif isinstance(color, list) and len(color) == len(series):
+        # assume list of valid matplotlib color specs (strings or RGBA tuples)
+        plot_colors = color
+    else:
+        plot_colors = [color] * len(series)
+
+    ax.set_prop_cycle(color=plot_colors)
+    for i, value in enumerate(series):
+        times = np.linspace(0, elapsedTimes[i], len(value))
+        ax.plot(times, value, label=f'Series {i+1}')
+    ax.set_title(title)
+    ax.set_xlabel('Time')
+    ax.set_ylabel(ylabel)
+    if legend:
+        ax.legend()
+    plt.show()
