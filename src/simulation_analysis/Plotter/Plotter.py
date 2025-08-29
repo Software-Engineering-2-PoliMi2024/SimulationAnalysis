@@ -5,6 +5,7 @@ from matplotlib.colors import Colormap, Normalize
 from typing import List, Tuple, Union
 from scipy.interpolate import CubicSpline
 import numpy as np
+from matplotlib.collections import LineCollection
 sns.set_theme()
 
 
@@ -221,4 +222,65 @@ def plotTimeSeries(
     ax.set_ylabel(ylabel)
     if legend:
         ax.legend()
+    plt.show()
+
+
+def plotBivariateTimeSeries(
+        xSeries: List[List[float | int]],
+        ySeries: List[List[float | int]],
+        elapsedTimes: List[float],
+        title: str,
+        xlabel: str,
+        ylabel: str,
+        legend: bool = True
+):
+    """Plots a bivariate time series given its values.
+
+    Args:
+        xSeries (List[List[float | int]]): A list of x time series.
+        ySeries (List[List[float | int]]): A list of y time series.
+        elapsedTimes (List[float]): A list of elapsed times corresponding to the time series.
+        title (str): The title of the plot.
+        xlabel (str): The label for the x-axis.
+        ylabel (str): The label for the y-axis.
+        legend (bool): Whether to show the legend.
+    """
+    fig, ax = plt.subplots(figsize=(10, 5))
+    cmap = plt.get_cmap('viridis')
+    tmax = max(elapsedTimes) if len(elapsedTimes) > 0 else 1.0
+    norm = Normalize(vmin=0, vmax=tmax)
+
+    for i, (x, y) in enumerate(zip(xSeries, ySeries)):
+        x = np.asarray(x)
+        y = np.asarray(y)
+        times = np.linspace(0, elapsedTimes[i], len(x))
+
+        if len(x) < 2:
+            # single-point series: scatter with color by time
+            ax.scatter(x, y, c=times, cmap=cmap,
+                       norm=norm, label=f'Series {i+1}')
+            continue
+
+        # build line segments for coloring along time
+        points = np.vstack([x, y]).T.reshape(-1, 1, 2)
+        segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        mid_times = (times[:-1] + times[1:]) / 2.0
+
+        # convert segments ndarray to a Python sequence of array-like objects
+        segments_list = [seg for seg in segments]
+        lc = LineCollection(segments_list, cmap=cmap, norm=norm,
+                            array=mid_times, linewidths=2)
+        ax.add_collection(lc)
+        # create a proxy for the legend using the end color of the series
+        ax.plot([], [], color=cmap(norm(times[-1])), label=f'Series {i+1}')
+
+    ax.autoscale()
+    ax.set_title(title)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    if legend:
+        ax.legend()
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    plt.colorbar(sm, ax=ax, label='Time')
     plt.show()

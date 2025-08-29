@@ -1,1 +1,1 @@
-from .Plotter import plotDistribution, plotRoad, plotTrajectory, plotBivariateDistribution, plotTrajectoriesOfARoad, plotTimeSeries
+from .Plotter import plotDistribution, plotRoad, plotTrajectory, plotBivariateDistribution, plotTrajectoriesOfARoad, plotTimeSeries, plotBivariateTimeSeries
