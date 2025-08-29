@@ -52,7 +52,7 @@ def plotBivariateDistribution(x, y, title: str, xlabel: str, ylabel: str):
     plt.show()
 
 
-def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRenderPoints: int = 100, roadWidth: float = 4):
+def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRenderPoints: int = 100, roadWidth: float = 3):
     """Plots a road given its control points.
 
     Args:
@@ -62,7 +62,7 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
         roadWidth (float, optional): The width of the plotted road. Defaults to 4.
     """
     xs = [p[0] for p in controlPoints]
-    ys = [p[1] for p in controlPoints]
+    ys = [p[1] + roadWidth/4 for p in controlPoints]
     cs = CubicSpline(xs, ys)
     xs_fine = np.linspace(min(xs), max(xs), splineRenderPoints)
     # compute centerline and its derivative
@@ -88,8 +88,7 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
     ax.fill(xs_poly, ys_poly, color='gray', zorder=1)
 
     # draw centerline on top
-    ax.plot(xs_fine, y, color='black', linestyle='--', zorder=2)
-    ax.plot(xs_fine, cs(xs_fine), color='white', linestyle='--')
+    ax.plot(xs_fine, y, color='white', linestyle='--')
 
 
 def plotTrajectory(
@@ -141,7 +140,7 @@ def plotTrajectoriesOfARoad(
         trajectoriesColor: str | float | Tuple[float, float, float,
                                                float] | List[Union[str, float, Tuple[float, float, float, float]]] = 'red',
         trajectoriesColorName: str | None = None,
-        roadWidth: float = 4.0
+        roadWidth: float = 3.0
 ):
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
