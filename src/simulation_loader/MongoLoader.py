@@ -7,8 +7,10 @@ from db_interact import MongoInteract
 
 from .SimulationLoader import SimulationLoader
 
+
 class MongoLoader(MongoInteract, SimulationLoader):
     """Class to load simulation data from a Mongo database."""
+
     def __init__(self, path="./.env"):
         super().__init__(path)
 
@@ -16,7 +18,8 @@ class MongoLoader(MongoInteract, SimulationLoader):
         self.sim_collection = getenv('SIMULATION_COLLECTION')
 
         if self.sim_collection is None:
-            raise ValueError("SIMULATION_COLLECTION environment variable not set in .env file")
+            raise ValueError(
+                "SIMULATION_COLLECTION environment variable not set in .env file")
 
     def load_simulations(self) -> pd.DataFrame:
         """Load all simulations from the database and return them as a pandas DataFrame."""
@@ -26,7 +29,7 @@ class MongoLoader(MongoInteract, SimulationLoader):
 
         return pd.DataFrame(list(all_data))
 
-    def retrive_simulations(self) -> pd.DataFrame:
+    def retrieve_simulations(self) -> pd.DataFrame:
         """Load simulations from the database into a pandas DataFrame."""
         assert self.db is not None, "Database connection is not established."
 
@@ -34,7 +37,7 @@ class MongoLoader(MongoInteract, SimulationLoader):
 
         df = pd.json_normalize(all_simulations)
         df.set_index('_id', inplace=True)
-      
+
         return df
 
     def retrieve_simulations_io(self) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -52,7 +55,7 @@ class MongoLoader(MongoInteract, SimulationLoader):
             out_dict['_id'] = sim_id
             inputs.append(in_dict)
             outputs.append(out_dict)
-            
+
         df_in = pd.DataFrame(inputs)
         df_in.set_index('_id', inplace=True)
 

@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.axes import Axes
 from matplotlib.colors import Colormap, Normalize
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from scipy.interpolate import CubicSpline
 import numpy as np
 sns.set_theme()
@@ -29,6 +29,26 @@ def plotDistribution(data, title: str, xlabel: str, ylabel: str):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.legend()
+    plt.show()
+
+
+def plotBivariateDistribution(x, y, title: str, xlabel: str, ylabel: str):
+    """Plot the bivariate distribution of the given data with a scatter plot and marginal histograms with kde.
+
+    Args:
+        x (np.ndarray): The input data for the x-axis.
+        y (np.ndarray): The input data for the y-axis.
+        title (str): The title of the plot.
+        xlabel (str): The label for the x-axis.
+        ylabel (str): The label for the y-axis.
+    """
+    g = sns.jointplot(x=x, y=y, kind="scatter",
+                      marginal_kws=dict(bins=30, fill=True, kde=True), s=20, alpha=0.5)
+    g.figure.set_size_inches(8, 5)
+    g.set_axis_labels(xlabel, ylabel)
+    g.figure.suptitle(title)
+    g.figure.tight_layout()
+    g.figure.subplots_adjust(top=0.95)
     plt.show()
 
 
@@ -112,3 +132,43 @@ def plotTrajectory(
         ax.legend()
     else:
         ax.plot(xs, ys, color=color_arg, alpha=alpha)
+
+
+def plotTrajectoriesOfARoad(
+        roadControlPoints: List[Tuple[int, int, int, int]],
+        trajectories: List[List[Tuple[float, float]]],
+        ax: Axes | None = None,
+        trajectoriesColor: str | float | Tuple[float, float, float,
+                                               float] | List[Union[str, float, Tuple[float, float, float, float]]] = 'red',
+        trajectoriesColorName: str | None = None,
+        roadWidth: float = 4.0
+):
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 6))
+
+    plotRoad(roadControlPoints, ax, roadWidth=roadWidth)
+
+    colorMap = plt.get_cmap("viridis")
+    if isinstance(trajectoriesColor, list) and len(trajectoriesColor) == len(trajectories) and all(isinstance(c, (int, float)) for c in trajectoriesColor):
+        norm = plt.Normalize(vmin=min(trajectoriesColor),  # type: ignore
+                             vmax=max(trajectoriesColor))  # type: ignore
+    else:
+        norm = plt.Normalize(vmin=0, vmax=1)  # type: ignore
+
+    for i, traj in enumerate(trajectories):
+        plotTrajectory(
+            positions=traj,
+            ax=ax,
+            color=trajectoriesColor[i] if isinstance(
+                trajectoriesColor, list) else trajectoriesColor,
+            colorMap=colorMap,
+            norm=norm)
+
+    ax.set_title('Simulation trajectories')
+    ax.set_xlabel('X position')
+    ax.set_ylabel('Y position')
+    if trajectoriesColorName is not None and isinstance(trajectoriesColor, list) and len(trajectoriesColor) == len(trajectories) and all(isinstance(c, (int, float)) for c in trajectoriesColor):
+        # create a ScalarMappable for the colorbar using the same colormap and normalization
+        sm = plt.cm.ScalarMappable(cmap=colorMap, norm=norm)
+        sm.set_array([])  # required for colorbar to work with ScalarMappable
+        plt.colorbar(sm, ax=ax, label=trajectoriesColorName)
