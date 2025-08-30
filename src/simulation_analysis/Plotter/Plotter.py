@@ -89,7 +89,7 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
     ax.fill(xs_poly, ys_poly, color='gray', zorder=1)
 
     # draw centerline on top
-    ax.plot(xs_fine, y, color='white', linestyle='--')
+    ax.plot(xs_fine, y, color='white', linestyle='--', linewidth=4)
 
 
 def plotTrajectory(
