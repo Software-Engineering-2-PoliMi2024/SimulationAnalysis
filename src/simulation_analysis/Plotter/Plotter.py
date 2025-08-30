@@ -141,7 +141,7 @@ def plotTrajectoriesOfARoad(
         trajectoriesColor: str | float | Tuple[float, float, float,
                                                float] | List[Union[str, float, Tuple[float, float, float, float]]] = 'red',
         trajectoriesColorName: str | None = None,
-        roadWidth: float = 3.0
+        roadWidth: float = 6.0
 ):
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
