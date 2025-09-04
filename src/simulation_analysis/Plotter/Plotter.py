@@ -64,23 +64,34 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
     """
     xs = [p[0] for p in controlPoints]
     ys = [p[1] + roadWidth/4 for p in controlPoints]
-    cs = CubicSpline(xs, ys)
-    xs_fine = np.linspace(min(xs), max(xs), splineRenderPoints)
-    # compute centerline and its derivative
-    y = cs(xs_fine)
-    dy = cs.derivative()(xs_fine)
 
-    # unit normal (-dy, 1)/sqrt(1+dy^2)
-    nx = -dy
-    ny = 1.0
-    denom = np.hypot(nx, ny)
-    nx /= denom
-    ny /= denom
+    # Use arc length parameterization
+    points = np.array([xs, ys]).T
+    distances = np.concatenate(
+        [[0], np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1))])
+
+    cs_x = CubicSpline(distances, xs)
+    cs_y = CubicSpline(distances, ys)
+
+    t_fine = np.linspace(distances[0], distances[-1], splineRenderPoints)
+
+    x = cs_x(t_fine)
+    y = cs_y(t_fine)
+    dx_dt = cs_x.derivative()(t_fine)
+    dy_dt = cs_y.derivative()(t_fine)
+
+    # Normal vector is (-dy/dt, dx/dt)
+    norm_length = np.sqrt(dx_dt**2 + dy_dt**2)
+    norm_length = np.where(norm_length == 0, 1, norm_length)
+
+    nx = -dy_dt / norm_length  # x-component of unit normal
+    ny = dx_dt / norm_length   # y-component of unit normal
+    # nx and ny are already unit vectors, no need to normalize again!
 
     half = roadWidth / 2.0  # roadWidth is now in data (axis) units
-    left_x = xs_fine - nx * half
+    left_x = x - nx * half
     left_y = y - ny * half
-    right_x = xs_fine + nx * half
+    right_x = x + nx * half
     right_y = y + ny * half
 
     # polygon for the road area
@@ -89,7 +100,7 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
     ax.fill(xs_poly, ys_poly, color='gray', zorder=1)
 
     # draw centerline on top
-    ax.plot(xs_fine, y, color='white', linestyle='--', linewidth=4)
+    ax.plot(x, y, color='white', linestyle='--', linewidth=2)
 
 
 def plotTrajectory(
@@ -145,6 +156,7 @@ def plotTrajectoriesOfARoad(
 ):
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 6))
+        ax.set_aspect('equal', adjustable='datalim')
 
     plotRoad(roadControlPoints, ax, roadWidth=roadWidth)
 
