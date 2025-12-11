@@ -26,7 +26,7 @@ class SimulationLoader(DBinteract, ABC):
     def addAggregation(
         data: pd.DataFrame,
         columnName: str,
-        aggregationFunction: Literal["avg", "min", "max", "element"] = "avg",
+        aggregationFunction: Literal["avg", "min", "max", "element", "median"] = "avg",
         absolute: bool = True,
     ):
         """Adds a new column to the DataFrame containing the aggregated values of the specified column.
@@ -36,13 +36,13 @@ class SimulationLoader(DBinteract, ABC):
         Args:
             data (pd.DataFrame): The input DataFrame to modify.
             columnName (str): The name of the column to aggregate.
-            aggregationFunction (Literal['avg', 'min', 'max'], optional): The aggregation function to use. Defaults to 'avg'.
+            aggregationFunction (Literal['avg', 'min', 'max', 'element', 'median'], optional): The aggregation function to use. Defaults to 'avg'.
             absolute (bool, optional): Whether to take the absolute value before aggregation. Defaults to False.
 
         Raises:
             KeyError: If the specified column is not found in the DataFrame.
             TypeError: If the specified column does not contain lists or tuples.
-            ValueError: If the aggregation function is not one of 'avg', 'min', or 'max'.
+            ValueError: If the aggregation function is not one of 'avg', 'min', 'max', 'element', 'median'.
         """
         index = 0
         if aggregationFunction == "element":
@@ -70,6 +70,7 @@ class SimulationLoader(DBinteract, ABC):
             "min": lambda x: min(x) if len(x) > 0 else float("nan"),
             "max": lambda x: max(x) if len(x) > 0 else float("nan"),
             "element": lambda x: x[index] if len(x) > index else float("nan"),
+            "median": lambda x: sorted(x)[len(x) // 2] if len(x) > 0 else float("nan"),
         }
 
         if aggregationFunction not in mapping:
