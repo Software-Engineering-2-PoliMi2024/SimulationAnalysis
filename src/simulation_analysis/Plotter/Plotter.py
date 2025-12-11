@@ -6,6 +6,7 @@ from typing import List, Tuple, Union
 from scipy.interpolate import CubicSpline
 import numpy as np
 from matplotlib.collections import LineCollection
+
 sns.set_theme()
 
 
@@ -20,12 +21,27 @@ def plotDistribution(data, title: str, xlabel: str, ylabel: str):
         ylabel (str): The label for the y-axis.
     """
     fig, ax = plt.subplots(figsize=(8, 5))
-    sns.histplot(data, bins=30, kde=True, ax=ax)
-    ax.vlines(data.mean(), 0, 3, color='r', linestyle='--', label='$\\mu$')
-    ax.vlines(data.mean() + data.std(), 0, 3, color='b',
-              linestyle='--', label='$\\mu + \\sigma$')
-    ax.vlines(data.mean() - data.std(), 0, 3, color='b',
-              linestyle='--', label='$\\mu - \\sigma$')
+    counts = sns.histplot(data, bins=30, kde=True, ax=ax)
+
+    max_count = max(p.get_height() for p in counts.patches)  # type: ignore
+
+    ax.vlines(data.mean(), 0, max_count, color="r", linestyle="--", label="$\\mu$")
+    ax.vlines(
+        data.mean() + data.std(),
+        0,
+        max_count,
+        color="b",
+        linestyle="--",
+        label="$\\mu + \\sigma$",
+    )
+    ax.vlines(
+        data.mean() - data.std(),
+        0,
+        max_count,
+        color="b",
+        linestyle="--",
+        label="$\\mu - \\sigma$",
+    )
     ax.set_title(title)
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
@@ -43,8 +59,14 @@ def plotBivariateDistribution(x, y, title: str, xlabel: str, ylabel: str):
         xlabel (str): The label for the x-axis.
         ylabel (str): The label for the y-axis.
     """
-    g = sns.jointplot(x=x, y=y, kind="scatter",
-                      marginal_kws=dict(bins=30, fill=True, kde=True), s=20, alpha=0.5)
+    g = sns.jointplot(
+        x=x,
+        y=y,
+        kind="scatter",
+        marginal_kws=dict(bins=30, fill=True, kde=True),
+        s=20,
+        alpha=0.5,
+    )
     g.figure.set_size_inches(8, 5)
     g.set_axis_labels(xlabel, ylabel)
     g.figure.suptitle(title)
@@ -53,7 +75,12 @@ def plotBivariateDistribution(x, y, title: str, xlabel: str, ylabel: str):
     plt.show()
 
 
-def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRenderPoints: int = 100, roadWidth: float = 3):
+def plotRoad(
+    controlPoints: List[Tuple[int, int, int, int]],
+    ax: Axes,
+    splineRenderPoints: int = 100,
+    roadWidth: float = 3,
+):
     """Plots a road given its control points.
 
     Args:
@@ -63,12 +90,13 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
         roadWidth (float, optional): The width of the plotted road. Defaults to 4.
     """
     xs = [p[0] for p in controlPoints]
-    ys = [p[1] + roadWidth/4 for p in controlPoints]
+    ys = [p[1] + roadWidth / 4 for p in controlPoints]
 
     # Use arc length parameterization
     points = np.array([xs, ys]).T
     distances = np.concatenate(
-        [[0], np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1))])
+        [[0], np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1))]
+    )
 
     cs_x = CubicSpline(distances, xs)
     cs_y = CubicSpline(distances, ys)
@@ -85,7 +113,7 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
     norm_length = np.where(norm_length == 0, 1, norm_length)
 
     nx = -dy_dt / norm_length  # x-component of unit normal
-    ny = dx_dt / norm_length   # y-component of unit normal
+    ny = dx_dt / norm_length  # y-component of unit normal
     # nx and ny are already unit vectors, no need to normalize again!
 
     half = roadWidth / 2.0  # roadWidth is now in data (axis) units
@@ -97,19 +125,21 @@ def plotRoad(controlPoints: List[Tuple[int, int, int, int]], ax: Axes, splineRen
     # polygon for the road area
     xs_poly = np.concatenate([left_x, right_x[::-1]])
     ys_poly = np.concatenate([left_y, right_y[::-1]])
-    ax.fill(xs_poly, ys_poly, color='gray', zorder=1)
+    ax.fill(xs_poly, ys_poly, color="gray", zorder=1)
 
     # draw centerline on top
-    ax.plot(x, y, color='white', linestyle='--', linewidth=2)
+    ax.plot(x, y, color="white", linestyle="--", linewidth=2)
 
 
 def plotTrajectory(
-        positions: List[Tuple[float, float]],
-        ax: Axes, color: str | float | Tuple[float, float, float, float] = 'red',
-        colorMap: Colormap | None = None,
-        norm: Normalize | None = None,
-        label: str | None = None,
-        alpha: float = 1.0):
+    positions: List[Tuple[float, float]],
+    ax: Axes,
+    color: str | float | Tuple[float, float, float, float] = "red",
+    colorMap: Colormap | None = None,
+    norm: Normalize | None = None,
+    label: str | None = None,
+    alpha: float = 1.0,
+):
     """Plots a trajectory given its positions.
 
     Args:
@@ -146,24 +176,33 @@ def plotTrajectory(
 
 
 def plotTrajectoriesOfARoad(
-        roadControlPoints: List[Tuple[int, int, int, int]],
-        trajectories: List[List[Tuple[float, float]]],
-        ax: Axes | None = None,
-        trajectoriesColor: str | float | Tuple[float, float, float,
-                                               float] | List[Union[str, float, Tuple[float, float, float, float]]] = 'red',
-        trajectoriesColorName: str | None = None,
-        roadWidth: float = 6.0
+    roadControlPoints: List[Tuple[int, int, int, int]],
+    trajectories: List[List[Tuple[float, float]]],
+    ax: Axes | None = None,
+    trajectoriesColor: (
+        str
+        | float
+        | Tuple[float, float, float, float]
+        | List[Union[str, float, Tuple[float, float, float, float]]]
+    ) = "red",
+    trajectoriesColorName: str | None = None,
+    roadWidth: float = 6.0,
 ):
     if ax is None:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        ax.set_aspect('equal', adjustable='datalim')
+        fig, ax = plt.subplots(figsize=(12, 4))
+        ax.set_aspect("equal", adjustable="datalim")
 
     plotRoad(roadControlPoints, ax, roadWidth=roadWidth)
 
     colorMap = plt.get_cmap("viridis")
-    if isinstance(trajectoriesColor, list) and len(trajectoriesColor) == len(trajectories) and all(isinstance(c, (int, float)) for c in trajectoriesColor):
-        norm = Normalize(vmin=min(trajectoriesColor),  # type: ignore
-                         vmax=max(trajectoriesColor))  # type: ignore
+    if (
+        isinstance(trajectoriesColor, list)
+        and len(trajectoriesColor) == len(trajectories)
+        and all(isinstance(c, (int, float)) for c in trajectoriesColor)
+    ):
+        norm = Normalize(
+            vmin=min(trajectoriesColor), vmax=max(trajectoriesColor)  # type: ignore
+        )  # type: ignore
     else:
         norm = Normalize(vmin=0, vmax=1)  # type: ignore
 
@@ -171,15 +210,24 @@ def plotTrajectoriesOfARoad(
         plotTrajectory(
             positions=traj,
             ax=ax,
-            color=trajectoriesColor[i] if isinstance(
-                trajectoriesColor, list) else trajectoriesColor,
+            color=(
+                trajectoriesColor[i]
+                if isinstance(trajectoriesColor, list)
+                else trajectoriesColor
+            ),
             colorMap=colorMap,
-            norm=norm)
+            norm=norm,
+        )
 
-    ax.set_title('Simulation trajectories')
-    ax.set_xlabel('X position')
-    ax.set_ylabel('Y position')
-    if trajectoriesColorName is not None and isinstance(trajectoriesColor, list) and len(trajectoriesColor) == len(trajectories) and all(isinstance(c, (int, float)) for c in trajectoriesColor):
+    ax.set_title("Simulation trajectories")
+    ax.set_xlabel("X position")
+    ax.set_ylabel("Y position")
+    if (
+        trajectoriesColorName is not None
+        and isinstance(trajectoriesColor, list)
+        and len(trajectoriesColor) == len(trajectories)
+        and all(isinstance(c, (int, float)) for c in trajectoriesColor)
+    ):
         # create a ScalarMappable for the colorbar using the same colormap and normalization
         sm = plt.cm.ScalarMappable(cmap=colorMap, norm=norm)
         sm.set_array([])  # required for colorbar to work with ScalarMappable
@@ -187,12 +235,14 @@ def plotTrajectoriesOfARoad(
 
 
 def plotTimeSeries(
-        series: List[List[float | int]],
-        elapsedTimes: List[float],
-        title: str, ylabel: str,
-        legend: bool = True,
-        color: str | List[float | int | str] = 'blue',
-        colorName: str | None = None):
+    series: List[List[float | int]],
+    elapsedTimes: List[float],
+    title: str,
+    ylabel: str,
+    legend: bool = True,
+    color: str | List[float | int | str] = "blue",
+    colorName: str | None = None,
+):
     """Plots a time series given its values.
 
     Args:
@@ -208,7 +258,11 @@ def plotTimeSeries(
     """
     fig, ax = plt.subplots(figsize=(10, 5))
     # prepare colors for plotting and optional colorbar
-    if isinstance(color, list) and len(color) == len(series) and all(isinstance(c, (int, float)) for c in color):
+    if (
+        isinstance(color, list)
+        and len(color) == len(series)
+        and all(isinstance(c, (int, float)) for c in color)
+    ):
         cmap = plt.get_cmap("viridis")
         vmin, vmax = min(color), max(color)
         if vmin == vmax:
@@ -228,9 +282,9 @@ def plotTimeSeries(
     ax.set_prop_cycle(color=plot_colors)
     for i, value in enumerate(series):
         times = np.linspace(0, elapsedTimes[i], len(value))
-        ax.plot(times, value, label=f'Series {i+1}')
+        ax.plot(times, value, label=f"Series {i+1}")
     ax.set_title(title)
-    ax.set_xlabel('Time')
+    ax.set_xlabel("Time")
     ax.set_ylabel(ylabel)
     if legend:
         ax.legend()
@@ -238,13 +292,13 @@ def plotTimeSeries(
 
 
 def plotBivariateTimeSeries(
-        xSeries: List[List[float | int]],
-        ySeries: List[List[float | int]],
-        elapsedTimes: List[float],
-        title: str,
-        xlabel: str,
-        ylabel: str,
-        legend: bool = True
+    xSeries: List[List[float | int]],
+    ySeries: List[List[float | int]],
+    elapsedTimes: List[float],
+    title: str,
+    xlabel: str,
+    ylabel: str,
+    legend: bool = True,
 ):
     """Plots a bivariate time series given its values.
 
@@ -258,7 +312,7 @@ def plotBivariateTimeSeries(
         legend (bool): Whether to show the legend.
     """
     fig, ax = plt.subplots(figsize=(10, 5))
-    cmap = plt.get_cmap('viridis')
+    cmap = plt.get_cmap("viridis")
     tmax = max(elapsedTimes) if len(elapsedTimes) > 0 else 1.0
     norm = Normalize(vmin=0, vmax=tmax)
 
@@ -269,8 +323,7 @@ def plotBivariateTimeSeries(
 
         if len(x) < 2:
             # single-point series: scatter with color by time
-            ax.scatter(x, y, c=times, cmap=cmap,
-                       norm=norm, label=f'Series {i+1}')
+            ax.scatter(x, y, c=times, cmap=cmap, norm=norm, label=f"Series {i+1}")
             continue
 
         # build line segments for coloring along time
@@ -280,11 +333,12 @@ def plotBivariateTimeSeries(
 
         # convert segments ndarray to a Python sequence of array-like objects
         segments_list = [seg for seg in segments]
-        lc = LineCollection(segments_list, cmap=cmap, norm=norm,
-                            array=mid_times, linewidths=2)
+        lc = LineCollection(
+            segments_list, cmap=cmap, norm=norm, array=mid_times, linewidths=2
+        )
         ax.add_collection(lc)
         # create a proxy for the legend using the end color of the series
-        ax.plot([], [], color=cmap(norm(times[-1])), label=f'Series {i+1}')
+        ax.plot([], [], color=cmap(norm(times[-1])), label=f"Series {i+1}")
 
     ax.autoscale()
     ax.set_title(title)
@@ -294,5 +348,5 @@ def plotBivariateTimeSeries(
         ax.legend()
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    plt.colorbar(sm, ax=ax, label='Time')
+    plt.colorbar(sm, ax=ax, label="Time")
     plt.show()
