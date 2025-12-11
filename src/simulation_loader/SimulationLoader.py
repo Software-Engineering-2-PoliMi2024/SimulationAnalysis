@@ -6,6 +6,7 @@ from typing import List, Tuple, Literal
 
 class SimulationLoader(DBinteract, ABC):
     """Abstract base class defining the interface for loading simulation data."""
+
     @staticmethod
     def withTags(data: pd.DataFrame, tags: List[str]) -> pd.DataFrame:
         """Returns a filtered DataFrame containing only the rows whose tags contain all the specified tags.
@@ -18,11 +19,16 @@ class SimulationLoader(DBinteract, ABC):
             pd.DataFrame: The filtered DataFrame.
         """
         # Remove rows with Nan tags
-        data = data[data['tags'].notna()]
-        return data[data['tags'].apply(lambda x: all(tag in x for tag in tags))]
+        data = data[data["tags"].notna()]
+        return data[data["tags"].apply(lambda x: all(tag in x for tag in tags))]
 
     @staticmethod
-    def addAggregation(data: pd.DataFrame, columnName: str, aggregationFunction: Literal['avg', 'min', 'max'] = 'avg', absolute: bool = True):
+    def addAggregation(
+        data: pd.DataFrame,
+        columnName: str,
+        aggregationFunction: Literal["avg", "min", "max", "element"] = "avg",
+        absolute: bool = True,
+    ):
         """Adds a new column to the DataFrame containing the aggregated values of the specified column.
         The aggregation is performed row-wise, thus the given column must contain lists or tuples.
         The new column will be named `{columnName}.{aggregationFunction}`.
@@ -38,12 +44,21 @@ class SimulationLoader(DBinteract, ABC):
             TypeError: If the specified column does not contain lists or tuples.
             ValueError: If the aggregation function is not one of 'avg', 'min', or 'max'.
         """
+        index = 0
+        if aggregationFunction == "element":
+            columnNameParts = columnName.split(".")
+            if len(columnNameParts) < 2:
+                raise ValueError(
+                    "For 'element' aggregationFunction, columnName must be in the format 'baseColumn.index'"
+                )
+            columnName = ".".join(columnNameParts[:-1])
+            index = int(columnNameParts[-1])
+
         if columnName not in data.columns:
             raise KeyError(f"Column '{columnName}' not found in data")
 
         if data[columnName].dtype not in [list, tuple]:
-            raise TypeError(
-                f"Column '{columnName}' must contain lists or tuples")
+            raise TypeError(f"Column '{columnName}' must contain lists or tuples")
 
         if absolute:
             tmp = data[columnName].apply(lambda x: [abs(i) for i in x])
@@ -51,15 +66,18 @@ class SimulationLoader(DBinteract, ABC):
             tmp = data[columnName]
 
         mapping = {
-            'avg': lambda x: sum(x) / len(x) if len(x) > 0 else float('nan'),
-            'min': lambda x: min(x) if len(x) > 0 else float('nan'),
-            'max': lambda x: max(x) if len(x) > 0 else float('nan')}
+            "avg": lambda x: sum(x) / len(x) if len(x) > 0 else float("nan"),
+            "min": lambda x: min(x) if len(x) > 0 else float("nan"),
+            "max": lambda x: max(x) if len(x) > 0 else float("nan"),
+            "element": lambda x: x[index] if len(x) > index else float("nan"),
+        }
 
         if aggregationFunction not in mapping:
             raise ValueError(f"aggfunc must be one of {list(mapping.keys())}")
 
-        data[f'{columnName}.{aggregationFunction}'] = tmp.apply(
-            lambda x: mapping[aggregationFunction](x))
+        data[f"{columnName}.{aggregationFunction}"] = tmp.apply(
+            lambda x: mapping[aggregationFunction](x)
+        )
 
     @staticmethod
     def addFps(data: pd.DataFrame):
@@ -69,12 +87,16 @@ class SimulationLoader(DBinteract, ABC):
         Args:
             data (pd.DataFrame): The input DataFrame to modify.
         """
-        if 'out.elapsedTime' not in data.columns or 'out.iterations' not in data.columns:
+        if (
+            "out.elapsedTime" not in data.columns
+            or "out.iterations" not in data.columns
+        ):
             raise KeyError(
-                "Columns 'out.elapsedTime' and 'out.iterations' must be present in the DataFrame")
+                "Columns 'out.elapsedTime' and 'out.iterations' must be present in the DataFrame"
+            )
 
-        data['fps'] = data['out.iterations'] / data['out.elapsedTime']
-        data['fps'] = data['fps'].fillna(0)
+        data["fps"] = data["out.iterations"] / data["out.elapsedTime"]
+        data["fps"] = data["fps"].fillna(0)
 
     @abstractmethod
     def retrieve_simulations(self) -> pd.DataFrame:

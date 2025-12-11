@@ -1,5 +1,7 @@
 from .SimulationLoader import SimulationLoader
 from .MongoLoader import MongoLoader
+from .JsonLoader import JsonLoader
+
 
 def check_install():
     """
